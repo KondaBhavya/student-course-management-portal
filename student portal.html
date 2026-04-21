@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Course Portal</title>
+
+<style>
+/* Page styling */
+body {
+  font-family: Arial;
+  background: #f4f4f4;
+  margin: 0;
+}
+
+/* Header section */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+}
+
+h1 {
+  margin: 0;
+}
+
+/* Buttons */
+button {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+/* Stats section */
+.stats {
+  display: flex;
+  gap: 15px;
+  padding: 20px 30px;
+}
+
+.stat {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  flex: 1;
+}
+
+/* Search box */
+.controls {
+  padding: 0 30px 20px;
+}
+
+.controls input {
+  width: 100%;
+  padding: 8px;
+}
+
+/* Course cards grid */
+.grid {
+  padding: 0 30px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+/* Small tag */
+.tag {
+  background: #e0f2ff;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+/* Highlight style */
+mark {
+  background: yellow;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Header -->
+<header>
+  <div>
+    <h1>Course Portal</h1>
+    <small>Student Management System</small>
+  </div>
+  <button onclick="toggleForm()">+ Add Course</button>
+</header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat">Total: <b id="totalCount"></b></div>
+  <div class="stat">Available: <b id="availableCount"></b></div>
+  <div class="stat">Enrolled: <b id="enrolledCount"></b></div>
+  <div class="stat">Full: <b id="fullCount"></b></div>
+</div>
+
+<!-- Search -->
+<div class="controls">
+  <input id="searchInput" placeholder="Search courses...">
+</div>
+
+<!-- Course Grid -->
+<div class="grid" id="courseGrid"></div>
+
+<!-- Add Course Form -->
+<div id="courseForm" style="display:none; padding:20px 30px;">
+  <input id="courseName" placeholder="Course Name"><br><br>
+  <input id="courseCode" placeholder="Course Code"><br><br>
+  <input id="courseDept" placeholder="Department"><br><br>
+  <input id="courseSeats" type="number" placeholder="Seats"><br><br>
+  <button onclick="addCourse()">Add Course</button>
+</div>
+
+<script>
+
+/* Initial Data */
+let courses = [
+  { id:1, name:"Introduction to Algorithms", code:"CS101", dept:"Computer Science", seats:27, total:30 },
+  { id:2, name:"Calculus II", code:"MATH201", dept:"Mathematics", seats:25, total:40 },
+  { id:3, name:"Quantum Mechanics", code:"PHY301", dept:"Physics", seats:0, total:20 }
+];
+
+let enrolledCount = 0;
+
+/* Render UI */
+// function renderCourses() {
+
+//   let searchValue = document.getElementById("searchInput").value.toLowerCase();
+//   let grid = document.getElementById("courseGrid");
+
+//   grid.innerHTML = "";
+
+//   let available = 0;
+//   let full = 0;
+
+//   courses.forEach(course => {
+
+//     if (course.seats > 0) available++;
+//     else full++;
+
+//     let card = document.createElement("div");
+//     card.className = "card";
+
+//     card.innerHTML = `
+//       <h3>${highlightText(course.name, searchValue)}</h3>
+//       <span class="tag">${highlightText(course.dept, searchValue)}</span>
+//       <p>${highlightText(course.code, searchValue)}</p>
+//       <p>Seats: ${course.seats}/${course.total}</p>
+//       <button onclick="enrollCourse(${course.id})" ${course.seats==0?"disabled":""}>
+//         ${course.seats==0?"Full":"Enroll"}
+//       </button>
+//     `;
+
+//     grid.appendChild(card);
+//   });
+
+
+
+
+
+function render() {
+
+  let search = document.getElementById("search").value.toLowerCase();
+  let grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  let avail = 0;
+  let full = 0;
+
+  courses.forEach(c => {
+
+    /* 🔥 SEARCH IN NAME + DEPT + CODE */
+    let match =
+      c.name.toLowerCase().includes(search) ||
+      c.dept.toLowerCase().includes(search) ||
+      c.code.toLowerCase().includes(search);
+
+    /* ❗ Skip if no match */
+    if (search && !match) return;
+
+    if (c.seats > 0) avail++;
+    else full++;
+
+    let card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <h3>${highlight(c.name, search)}</h3>
+      <span class="tag">${highlight(c.dept, search)}</span>
+      <p>${highlight(c.code, search)}</p>
+      <p>Seats: ${c.seats}/${c.total}</p>
+      <button onclick="enroll(${c.id})" ${c.seats==0?"disabled":""}>
+        ${c.seats==0?"Full":"Enroll"}
+      </button>
+    `;
+
+    grid.appendChild(card);
+  });
+
+  document.getElementById("total").innerText = courses.length;
+  document.getElementById("avail").innerText = avail;
+  document.getElementById("full").innerText = full;
+  document.getElementById("enrolled").innerText = enrolled;
+}
+
+  /* Update stats */
+  document.getElementById("totalCount").innerText = courses.length;
+  document.getElementById("availableCount").innerText = available;
+  document.getElementById("fullCount").innerText = full;
+  document.getElementById("enrolledCount").innerText = enrolledCount;
+}
+
+/* Highlight search text */
+function highlightText(text, search) {
+  if (!search) return text;
+
+  let regex = new RegExp(search, "gi");
+  return text.replace(regex, match => `<mark>${match}</mark>`);
+}
+
+/* Enroll function */
+function enrollCourse(id) {
+  let course = courses.find(c => c.id === id);
+
+  if (course.seats > 0) {
+    course.seats--;
+    enrolledCount++;
+    renderCourses();
+  }
+}
+
+/* Add new course */
+function addCourse() {
+
+  let name = document.getElementById("courseName").value;
+  let code = document.getElementById("courseCode").value;
+  let dept = document.getElementById("courseDept").value;
+  let seats = parseInt(document.getElementById("courseSeats").value);
+
+  if (!name || !code || !dept || !seats) {
+    alert("Please fill all fields");
+    return;
+  }
+
+  courses.push({
+    id: Date.now(),
+    name,
+    code,
+    dept,
+    seats,
+    total: seats
+  });
+
+  toggleForm();
+  renderCourses();
+}
+
+/* Toggle form */
+function toggleForm() {
+  let form = document.getElementById("courseForm");
+  form.style.display = form.style.display === "none" ? "block" : "none";
+}
+
+/* Event listener */
+document.getElementById("searchInput").addEventListener("input", renderCourses);
+
+/* Initial load */
+renderCourses();
+
+</script>
+
+</body>
+</html>
